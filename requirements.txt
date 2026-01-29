@@ -1,0 +1,19 @@
+# Videeo.ai Stage 1 Pipeline - Python Dependencies
+
+# Core Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# HTTP Client (async)
+httpx==0.28.1
+
+# Python version compatibility
+python-multipart==0.0.19
+
+# For file handling
+aiofiles==24.1.0
+
+# FFmpeg delivery
+imageio-ffmpeg==0.6.0

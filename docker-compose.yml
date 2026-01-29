@@ -1,0 +1,39 @@
+# Videeo.ai Stage 1 Pipeline - Docker Compose
+
+version: '3.8'
+
+services:
+  videeo-api:
+    build: .
+    container_name: videeo-stage1-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KIE_API_KEY=${KIE_API_KEY}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - DEBUG=${DEBUG:-false}
+    volumes:
+      - ./outputs:/app/outputs
+      - ./temp:/app/temp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Optional: Add Redis for production job queue
+# redis:
+#   image: redis:7-alpine
+#   container_name: videeo-redis
+#   ports:
+#     - "6379:6379"
+#   volumes:
+#     - redis_data:/data
+
+# volumes:
+#   redis_data:

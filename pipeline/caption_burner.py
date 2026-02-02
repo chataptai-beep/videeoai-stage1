@@ -33,14 +33,15 @@ class CaptionBurner:
         self.ffmpeg_path = FFMPEG_EXE
         logger.info(f"CaptionBurner using FFmpeg at: {self.ffmpeg_path}")
         
-        # Caption styling (as per client requirements)
-        self.font_family = "Arial"
-        self.font_size = 48
-        self.font_color = "white"
+        # Caption styling (LinkedIn / Hormozi Style)
+        # Using Arial Bold as generic 'Sans-Serif'
+        self.font_family = "Arial" 
+        self.font_size = 70           
+        self.font_color = "white"    
         self.outline_color = "black"
-        self.outline_width = 2
-        self.box_enabled = True
-        self.box_color = "black@0.5"  # Semi-transparent black background
+        self.outline_width = 4
+        self.box_enabled = False      
+        self.box_color = "black@0.5"
         self.box_padding = 10
     
     async def burn_captions(
@@ -121,8 +122,10 @@ class CaptionBurner:
             if not scene.dialogue or not scene.dialogue.strip():
                 continue
             
-            # Escape special characters for FFmpeg
-            text = self._escape_text(scene.dialogue)
+            # Split text into lines for vertical video wrapping
+            import textwrap
+            wrapped_text = "\n".join(textwrap.wrap(scene.dialogue, width=25))
+            text = self._escape_text(wrapped_text)
             
             # On Windows, drive letter colons in fontfile path must be escaped for FFmpeg filters
             # Standard formatting: C\\:/Windows/Fonts/arialbd.ttf
@@ -138,8 +141,9 @@ class CaptionBurner:
                 f"fontcolor={self.font_color}:"
                 f"borderw={self.outline_width}:"
                 f"bordercolor={self.outline_color}:"
+                f"line_spacing=10:"
                 f"x=(w-text_w)/2:"  # Center horizontally
-                f"y=h-th-50:"  # Bottom with 50px padding
+                f"y=(h-th)/2:"      # CENTER vertically for high impact
                 f"enable='between(t,{start_time},{end_time})'"
             )
             
@@ -157,20 +161,8 @@ class CaptionBurner:
     
     def _escape_text(self, text: str) -> str:
         """Escape special characters for FFmpeg drawtext filter."""
-        # Characters that need escaping in FFmpeg drawtext
-        escape_chars = {
-            "'": "'\\''",  # Single quote
-            ":": "\\:",    # Colon (drawtext parameter separator)
-            "\\": "\\\\",  # Backslash
-            "%": "\\%",    # Percent (used for variables)
-            "\n": " ",     # Newline to space
-        }
-        
-        result = text
-        for char, escaped in escape_chars.items():
-            result = result.replace(char, escaped)
-        
-        return result
+        res = text.replace("\\", "\\\\").replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
+        return res
     
     async def burn_captions_with_srt(
         self,

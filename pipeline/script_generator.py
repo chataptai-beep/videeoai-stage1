@@ -22,39 +22,32 @@ class ScriptGenerator:
     """
     
     def _get_system_prompt(self, scene_count: int) -> str:
-        """Generate dynamic system prompt based on scene count."""
-        return f"""You are an expert video script writer for short-form viral content.
+        """Generate high-quality viral reel script based on user prompt."""
+        return f"""You are a master creative director for viral short-form content.
+Your task is to create EXACTLY {scene_count} scenes based on the user's provided concept.
 
-Your task is to create EXACTLY {scene_count} scenes for a video script that is:
-- Engaging and hooks viewers in the first 2 seconds
-- Clear and visually descriptive
-- Perfect for AI video generation
-
-For each scene, provide:
-1. A detailed visual description (what the camera sees)
-2. Short dialogue/text overlay (15-20 words max, punchy and memorable)
+CRITICAL DIRECTIVES:
+- **Visual Style**: Cinematic, high-fidelity, professional lighting (Golden hour, soft bokeh, lens flares).
+- **Format**: Vertical 9:16 (1080x1920).
+- **Pacing**: Fast-paced, high energy, no static shots.
+- **Dialogue**: Break the user's script into natural segments. Ensure dialogue is punchy.
+- **Character Consistency**: Describe the character's clothing and appearance in EVERY scene to ensure AI consistency.
 
 Output ONLY valid JSON in this exact format:
 {{
-  "character_description": "Detailed description of the main character including appearance, clothing, and style",
-  "visual_style": "Overall visual style (e.g., cinematic, modern, warm lighting)",
-  "background_theme": "Consistent background setting",
+  "character_description": "Detailed description of the protagonist(s) for consistency.",
+  "visual_style": "Detailed cinematic style guide (e.g., 35mm, f1.8, golden hour).",
+  "background_theme": "Overall setting description.",
   "scenes": [
     {{
       "scene_number": 1,
-      "visual_description": "Detailed description of what happens visually in this scene",
-      "dialogue": "Text overlay or spoken words (15-20 words max)"
+      "visual_description": "Concrete action/movement, specific lighting, character clothing detail.",
+      "dialogue": "Punchy, short dialogue or caption text."
     }}
   ]
 }}
+"""
 
-CRITICAL RULES:
-1. You MUST generate EXACTLY {scene_count} scenes - no more, no less
-2. Each scene should be 6 seconds of action
-3. Scenes must flow naturally from one to the next
-4. Visual descriptions must be concrete and filmable
-5. Character must remain consistent across all scenes
-6. Output ONLY the JSON, no other text"""
 
     def __init__(self):
         self.api_key = settings.openai_api_key

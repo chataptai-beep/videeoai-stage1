@@ -5,10 +5,12 @@ A production-quality FastAPI backend that converts text prompts into multi-scene
 ## 🚀 Features
 
 - **Multi-Scene Generation**: Automatically converts a single prompt into a structured 5-scene script.
-- **AI-Native Video**: Uses `kie.ai` (Veo 3 Fast) to generate consistent video scenes with natural motion, rather than static images with basic pans/zooms.
-- **Character Consistency**: Generates a reference character image first to maintain visual continuity across scenes.
-- **Automated Assembly**: Stitches scenes with smooth transitions and burns in dialogue captions according to spec.
-- **Async Workflow**: Handles long-running jobs with an in-memory status tracker and background processing.
+- **Viral-Optimized Format**: Defaulted to **Vertical (9:16)** for TikTok, Reels, and Shorts impact.
+- **High-Energy Pacing**: Implements **2x Speedup (Energy Boost)** to compress scenes into punchy 4-second viral clips.
+- **AI-Native Video**: Uses `kie.ai` (Veo 3 Fast) to generate consistent video scenes with natural motion.
+- **Character Consistency**: Generates a reference character image first to maintain visual continuity.
+- **Automated Assembly**: Stitches scenes with smooth transitions and burns in high-impact captions.
+- **Hormozi-Style Captions**: Bold, yellow, large, and centered captions designed to stop the scroll.
 - **Windows Optimized**: Robust path handling and dynamic FFmpeg/ffprobe detection.
 
 ---
@@ -77,8 +79,8 @@ curl http://localhost:8000/download/{job_id}
 1. **LLM Scripting**: GPT-4 breaks the prompt into 5 scenes with dialogue.
 2. **Reference Image**: Generates a character reference using Nano Banana for consistency.
 3. **Video Synthesis**: Generates individual videos per scene using Veo 3 Fast (cost-efficient and high quality).
-4. **Stitching**: Uses FFmpeg absolute path concatenation for robust cross-platform assembly.
-5. **Captioning**: Burns text using `drawtext` with Arial Bold styling as per client requirements.
+4. **Stitching**: Uses FFmpeg with vertical scale/crop logic and **2x Speed factor** to create high-velocity transitions.
+5. **Captioning**: Burns text using `drawtext` with Large Yellow Bold styling centered on screen for viral readability.
 
 ### Design Decisions
 - **AI-Native Motion**: Instead of applying a basic "Ken Burns" effect to static images, the pipeline uses real AI video generation. This results in far more engaging content that captures actual movements (e.g., waves crashing, cars flying).

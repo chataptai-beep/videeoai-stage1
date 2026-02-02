@@ -178,51 +178,6 @@ class VideoStitcher:
         output_filename: str,
         crossfade_duration: float = 1.0
     ) -> str:
-        """
-        Stitch videos with 1s crossfade transitions.
-        Uses synchronous subprocess.run wrapped in a thread for stability on Windows.
-        Removed Ken Burns zoom to prevent FFmpeg hangs - relies on native AI motion.
-        """
-        if not video_urls or len(video_urls) < 1:
-            raise ValueError("No video URLs provided for stitching")
-
-        import subprocess
-        import functools
-
-        # Run the heavy lifting in a separate thread to avoid blocking the event loop
-        # and to avoid asyncio.subprocess issues on Windows
-        return await asyncio.to_thread(
-            self._stitch_sync,
-            video_urls,
-            output_filename,
-            crossfade_duration
-        )
-
-    def _stitch_sync(self, video_urls, output_filename, crossfade_duration):
-        """Synchronous implementation of stitching to be run in a thread."""
-        logger.info("Starting synchronous stitching task...")
-        
-        # 1. Download
-        local_videos = []
-        durations = []
-        
-        # Note: We can't use 'await' here. We need a synchronous download or 
-        # we have to do the downloads in the async part.
-        # To avoid refactoring everything, let's just do the FFmpeg part synchronously
-        # ... Wait, I actually need to download first. 
-        # I'll let the download happen in the async wrapper or I'll use requests here?
-        # Better: Do downloads in async method, pass PATHS to this sync method.
-        # But this method signature is fixed? No, I can change internal logic.
-        pass
-        
-    # Rethinking: Keep downloads async, only make FFmpeg calls sync via thread.
-    
-    async def stitch_with_crossfade(
-        self,
-        video_urls: List[str],
-        output_filename: str,
-        crossfade_duration: float = 1.0
-    ) -> str:
         # 1. Download Async
         local_videos = []
         for i, url in enumerate(video_urls):
@@ -240,33 +195,59 @@ class VideoStitcher:
 
     def _process_ffmpeg_sync(self, local_videos, output_filename, crossfade_duration):
         import subprocess
+        from config import settings
+        # Get Durations & Speed Up Factor
+        # User Request: Don't apply 2x speed. Use native speed.
+        speed_factor = 1.0
         
-        # Get Durations
-        durations = []
-        for v in local_videos:
-            cmd = [self.ffmpeg_path, "-i", v]
-            res = subprocess.run(cmd, capture_output=True, text=True)
-            # Parse output
+        # Standardize (Vertical Crop + Speed Up)
+        std_videos = []
+        durations = [] # We will calculate durations of the processed videos
+        target_w = settings.video_width
+        target_h = settings.video_height
+        
+        for i, v in enumerate(local_videos):
+            std_path = str(self.output_dir / f"std_scene_{i}.mp4")
+            
+            # VF chain:
+            # 1. Scale to fill target (1080x1920) while preserving aspect ratio
+            # 2. Crop to exactly 1080x1920 (center)
+            # 3. Force SAR 1:1 to avoid aspect ratio weirdness in players
+            
+            vf = (f"scale={target_w}:{target_h}:force_original_aspect_ratio=increase,"
+                  f"crop={target_w}:{target_h}:(in_w-{target_w})/2:(in_h-{target_h})/2,"
+                  f"setsar=1")
+
+            input_args = ["-y"]
+            
+            # TRIM Logic: Cut first 1s for scenes > 0 (to remove static reference frame)
+            if i > 0:
+                input_args.extend(["-ss", "1.0"])
+            
+            input_args.extend(["-i", v])
+
+            cmd = [
+                self.ffmpeg_path, *input_args,
+                "-vf", vf,
+                "-r", "30", # Force 30fps output
+                "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+                "-c:a", "aac", # Re-encode audio to AAC to ensure compatibility
+                std_path
+            ]
+            
+            subprocess.run(cmd, check=True)
+            std_videos.append(std_path)
+            
+            # Now get the duration of the standardized video
+            cmd_dur = [self.ffmpeg_path, "-i", std_path]
+            res_dur = subprocess.run(cmd_dur, capture_output=True, text=True)
             import re
-            match = re.search(r"Duration:\s*(\d{2}):(\d{2}):(\d{2}\.\d+)", res.stderr)
+            match = re.search(r"Duration:\s*(\d{2}):(\d{2}):(\d{2}\.\d+)", res_dur.stderr)
             if match:
                  h, m, s = map(float, match.groups())
                  durations.append(h*3600 + m*60 + s)
             else:
-                 durations.append(8.0)
-
-        # Standardize (Scale Only, No Zoom)
-        std_videos = []
-        for i, v in enumerate(local_videos):
-            std_path = str(self.output_dir / f"std_scene_{i}.mp4")
-            cmd = [
-                self.ffmpeg_path, "-y", "-i", v,
-                "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1",
-                "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
-                std_path
-            ]
-            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            std_videos.append(std_path)
+                 durations.append(4.0) # Fallback
             
         # Stitch
         output_path = self.output_dir / f"{output_filename}.mp4"
@@ -281,10 +262,12 @@ class VideoStitcher:
         for v in std_videos:
             inputs.extend(["-i", v])
 
+        # REMOVED Silent Audio Input
+
         # Dynamic Offsets
         filter_complex = ""
         prev_v = "[0:v]"
-        prev_a = "[0:a]"
+        prev_a = "[0:a]" # Audio is BACK
         cumulative_offset = 0.0
         
         for i in range(1, n):
@@ -299,18 +282,22 @@ class VideoStitcher:
         cmd = [
             self.ffmpeg_path, "-y", *inputs,
             "-filter_complex", filter_complex.strip().rstrip(';'),
-             "-map", prev_v, "-map", prev_a,
+             "-map", prev_v, 
+            "-map", prev_a, # Map actual audio
+            "-s", f"{target_w}x{target_h}", # FORCE VERTICAL
+            "-aspect", "9:16",
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+            "-shortest", 
             "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
             str(output_path)
         ]
         
-        logger.info(f"Running synchronous stitching for {n} clips...")
-        subprocess.run(cmd, check=True) # Let it print to stdout/stderr for debug
+        logger.info(f"Running synchronous stitching (Vertical + Fast) for {n} clips...")
+        subprocess.run(cmd, check=True)
         
         # Cleanup
-        for f in local_videos + std_videos:
-            if os.path.exists(f): os.remove(f)
+        # for f in local_videos + std_videos:
+        #     if os.path.exists(f): os.remove(f)
             
         return str(output_path)
     

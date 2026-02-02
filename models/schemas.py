@@ -47,8 +47,8 @@ class GenerateRequest(BaseModel):
         description="Number of scenes to generate (default: 5)"
     )
     aspect_ratio: AspectRatio = Field(
-        default=AspectRatio.LANDSCAPE,
-        description="Video aspect ratio (default: 16:9)"
+        default=AspectRatio.PORTRAIT,
+        description="Aspect ratio (16:9, 9:16, 1:1)"
     )
 
 

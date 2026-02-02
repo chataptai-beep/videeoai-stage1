@@ -30,9 +30,9 @@ class Settings(BaseSettings):
     
     # Pipeline Settings
     default_scene_count: int = 5
-    scene_duration_seconds: int = 6
-    video_width: int = 1920
-    video_height: int = 1080
+    scene_duration_seconds: int = 4  # Faster pacing for Reels
+    video_width: int = 1080          # Vertical 9:16
+    video_height: int = 1920         # Vertical 9:16
     video_fps: int = 30
     
     # Timeouts and Retries

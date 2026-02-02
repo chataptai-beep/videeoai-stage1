@@ -114,10 +114,10 @@ class VideoGenerator:
         
         # Style instructions
         prompt_parts.append(
-            "STYLE: The shot must be hyper-realistic, 4K, cinematic, "
-            "with natural lighting and detailed textures. "
-            "Keep camera movement steady and fluid. "
-            "Maintain consistent lighting throughout the shot."
+            "STYLE: 9:16 Vertical, IMAX 70mm Quality, Christopher Nolan Style. "
+            "High-contrast lighting, deep blacks, teal and orange color grade. "
+            "Camera Movement: Dynamic, Steadicam, pushing in, high energy, NOT static. "
+            "Texture: Film grain, realistic, detailed."
         )
         
         # Audio instructions

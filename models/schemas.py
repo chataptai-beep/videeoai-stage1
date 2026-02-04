@@ -37,7 +37,7 @@ class GenerateRequest(BaseModel):
     prompt: str = Field(
         ...,
         min_length=10,
-        max_length=2000,
+        max_length=10000,
         description="Text prompt describing the video to generate"
     )
     scenes: int = Field(

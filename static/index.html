@@ -537,7 +537,19 @@
 
                 if (!response.ok) {
                     const err = await response.json();
-                    throw new Error(err.detail || 'Initialization failed');
+                    let errorMessage = 'Initialization failed';
+                    
+                    if (err.detail) {
+                        if (Array.isArray(err.detail)) {
+                            // Handle FastAPI validation errors (list of dicts)
+                            errorMessage = err.detail.map(e => `${e.loc.join('.')}: ${e.msg}`).join('\n');
+                        } else {
+                            // Handle standard HTTP errors
+                            errorMessage = err.detail;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json();

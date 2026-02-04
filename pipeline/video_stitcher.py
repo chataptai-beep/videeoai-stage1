@@ -228,10 +228,11 @@ class VideoStitcher:
 
             cmd = [
                 self.ffmpeg_path, *input_args,
+                "-threads", "1", # CRITICAL: Limit memory usage on Railway
                 "-vf", vf,
-                "-r", "30", # Force 30fps output
+                "-r", "30",
                 "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
-                "-c:a", "aac", # Re-encode audio to AAC to ensure compatibility
+                "-c:a", "aac",
                 std_path
             ]
             
@@ -286,6 +287,7 @@ class VideoStitcher:
             "-map", prev_a, # Map actual audio
             "-s", f"{target_w}x{target_h}", # FORCE VERTICAL
             "-aspect", "9:16",
+            "-threads", "1", # CRITICAL for Railway RAM
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23", "-pix_fmt", "yuv420p",
             "-shortest", 
             "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",

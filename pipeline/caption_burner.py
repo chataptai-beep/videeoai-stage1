@@ -79,6 +79,7 @@ class CaptionBurner:
             "-y",
             "-i", str(input_video_path),
             "-vf", filter_complex,
+            "-threads", "1", # Memory protection
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23", "-pix_fmt", "yuv420p",
             "-c:a", "copy", "-movflags", "+faststart",
             str(output_path)

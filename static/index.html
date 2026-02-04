@@ -573,8 +573,11 @@
 
             } catch (err) {
                 clearInterval(pollInterval);
+                updateProgress(100, "Generation Failed");
+                statusText.style.color = "#ff6b6b";
+                statusText.textContent = `Error: ${err.message}`;
                 showError(err.message);
-                resetUI();
+                resetUI(true); // Enable button to allow retry
             }
         }
 

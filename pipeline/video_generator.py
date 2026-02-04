@@ -120,8 +120,11 @@ class VideoGenerator:
             "Texture: Film grain, realistic, detailed."
         )
         
-        # Audio instructions (Disabled to prevent Veo 400 errors)
-        # prompt_parts.append(...) removed
+        # Audio instructions
+        prompt_parts.append(
+            "AUDIO: Cinematic sound effects matching the action, "
+            "realistic ambient noise, high fidelity."
+        )
         
         # Critical: No text overlays (we add captions ourselves)
         prompt_parts.append(
@@ -163,7 +166,7 @@ class VideoGenerator:
                         "aspectRatio": ar_map.get(aspect_ratio, "16:9"),
                         "imageUrls": reference_image_url,
                         "generationType": "FIRST_AND_LAST_FRAMES_2_VIDEO",
-                        "enableAudio": False, # Disable audio to prevent Google Veo OOM/Failure
+                        "enableAudio": True,
                         "seeds": "12345",
                         "negative_prompt": "text, subtitles, watermark, logo, signature, typography, blurred, distorted"
                     }

@@ -6,6 +6,7 @@ multi-scene AI videos with native video generation and frame continuity.
 
 Author: AsaanAI
 Version: 1.0.0
+# Trigger redeploy: 2026-02-04 23:18
 """
 
 import asyncio

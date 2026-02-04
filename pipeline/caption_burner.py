@@ -49,7 +49,8 @@ class CaptionBurner:
         input_video_path: str,
         scenes: List[Scene],
         output_filename: str,
-        scene_duration: float = 6.0
+        scene_duration: float = 6.0,
+        scene_durations: Optional[List[float]] = None
     ) -> str:
         """
         Burn captions. Uses synchronous execution for stability.
@@ -59,11 +60,18 @@ class CaptionBurner:
         
         # 1. Determine actual duration to split captions evenly
         total_duration = await self._get_duration_async(str(input_video_path))
-        if total_duration > 0 and len(scenes) > 0:
+        
+        # Use provided durations if available, otherwise estimate
+        if scene_durations and len(scene_durations) == len(scenes):
+            logger.info("Using explicit scene durations for caption timing")
+        elif total_duration > 0 and len(scenes) > 0:
             scene_duration = total_duration / len(scenes)
+            scene_durations = [scene_duration] * len(scenes)
             logger.info(f"Calculated dynamic scene duration: {scene_duration:.2f}s (Total: {total_duration}s, Scenes: {len(scenes)})")
+        else:
+            scene_durations = [scene_duration] * len(scenes)
 
-        filter_complex = self._build_drawtext_filter(scenes, scene_duration)
+        filter_complex = self._build_drawtext_filter(scenes, scene_duration, scene_durations)
         output_path = self.output_dir / f"{output_filename}_captioned.mp4"
 
         cmd = [
@@ -71,7 +79,7 @@ class CaptionBurner:
             "-y",
             "-i", str(input_video_path),
             "-vf", filter_complex,
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23", "-pix_fmt", "yuv420p",
             "-c:a", "copy", "-movflags", "+faststart",
             str(output_path)
         ]
@@ -101,7 +109,8 @@ class CaptionBurner:
     def _build_drawtext_filter(
         self,
         scenes: List[Scene],
-        scene_duration: float
+        scene_duration: float,
+        scene_durations: Optional[List[float]] = None
     ) -> str:
         """
         Build the FFmpeg drawtext filter string for all scenes.
@@ -112,11 +121,14 @@ class CaptionBurner:
             return "null"  # No-op filter
         
         drawtext_filters = []
+        current_time = 0.0
         
         for i, scene in enumerate(scenes):
             # Calculate timing for this scene
-            start_time = i * scene_duration
-            end_time = start_time + scene_duration
+            duration = scene_durations[i] if (scene_durations and i < len(scene_durations)) else scene_duration
+            start_time = current_time
+            end_time = start_time + duration
+            current_time += duration
             
             # Skip empty dialogues
             if not scene.dialogue or not scene.dialogue.strip():
@@ -124,12 +136,16 @@ class CaptionBurner:
             
             # Split text into lines for vertical video wrapping
             import textwrap
+            import platform
             wrapped_text = "\n".join(textwrap.wrap(scene.dialogue, width=25))
             text = self._escape_text(wrapped_text)
             
-            # On Windows, drive letter colons in fontfile path must be escaped for FFmpeg filters
-            # Standard formatting: C\\:/Windows/Fonts/arialbd.ttf
-            font_path = "C\\:/Windows/Fonts/arialbd.ttf"
+            # Cross-platform font path handling
+            if platform.system() == "Windows":
+                font_path = "C\\:/Windows/Fonts/arialbd.ttf"
+            else:
+                # Linux: Use Liberation Sans Bold (installed via fonts-liberation)
+                font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
             
             # Build drawtext filter for this scene
             # Using enable filter to show text only during scene duration

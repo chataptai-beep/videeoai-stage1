@@ -286,7 +286,7 @@ class VideoStitcher:
             "-map", prev_a, # Map actual audio
             "-s", f"{target_w}x{target_h}", # FORCE VERTICAL
             "-aspect", "9:16",
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23", "-pix_fmt", "yuv420p",
             "-shortest", 
             "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
             str(output_path)
@@ -299,7 +299,7 @@ class VideoStitcher:
         # for f in local_videos + std_videos:
         #     if os.path.exists(f): os.remove(f)
             
-        return str(output_path)
+        return str(output_path), durations
     
     def _cleanup_temp_files(self, files: List[str]):
         """Remove temporary files."""

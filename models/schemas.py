@@ -128,6 +128,7 @@ class JobState(BaseModel):
     # Generated data
     script: Optional[VideoScript] = None
     reference_image_url: Optional[str] = None
+    scene_durations: List[float] = Field(default_factory=list)
     scene_videos: List[str] = Field(default_factory=list)
     
     # Output

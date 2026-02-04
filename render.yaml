@@ -1,0 +1,14 @@
+# Render.com deployment configuration
+services:
+  - type: web
+    name: videeo-ai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: KIE_API_KEY
+        sync: false
+      - key: DEBUG
+        value: "false"

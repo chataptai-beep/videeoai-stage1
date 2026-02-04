@@ -17,7 +17,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from config import settings
 from models.schemas import (
@@ -127,18 +128,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files and outputs
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
+
 
 # === API Endpoints ===
 
-@app.get("/", tags=["Health"])
+@app.get("/", tags=["Frontend"], response_class=HTMLResponse)
 async def root():
-    """Health check endpoint."""
-    return {
-        "name": settings.app_name,
-        "version": settings.app_version,
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    """Serve the frontend application."""
+    index_path = Path("static/index.html")
+    if not index_path.exists():
+        return HTMLResponse(content="<h1>Frontend not found</h1>", status_code=404)
+    with open(index_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
 
 
 @app.get("/health", tags=["Health"])

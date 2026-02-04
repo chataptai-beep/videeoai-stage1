@@ -8,6 +8,7 @@ import logging
 from typing import Optional
 
 import httpx
+from pathlib import Path
 
 from config import settings
 from models.schemas import JobState, JobStatus, Scene, VideoScript, AspectRatio
@@ -225,18 +226,22 @@ class PipelineOrchestrator:
         try:
             output_filename = f"video_{job.job_id}"
             
-            stitched_path = await self._with_retry(
+            # Result is now (path, durations)
+            stitch_result = await self._with_retry(
                 lambda: self.video_stitcher.stitch_with_crossfade(
                     video_urls=job.scene_videos,
                     output_filename=output_filename
                 ),
                 "Video stitching"
             )
+            stitched_path = stitch_result[0]
+            scene_durations = stitch_result[1]
             
             # Store path temporarily (will be replaced with CDN URL)
             job_manager.update_job(
                 job.job_id,
                 video_url=stitched_path,
+                scene_durations=scene_durations,
                 progress_percent=85,
                 current_step="Videos stitched successfully"
             )
@@ -266,7 +271,8 @@ class PipelineOrchestrator:
                     input_video_path=job.video_url,
                     scenes=job.script.scenes,
                     output_filename=output_filename,
-                    scene_duration=settings.scene_duration_seconds
+                    scene_duration=settings.scene_duration_seconds,
+                    scene_durations=job.scene_durations
                 ),
                 "Caption burning"
             )
@@ -299,13 +305,22 @@ class PipelineOrchestrator:
         job = job_manager.get_job(job.job_id)
         
         try:
-            # Upload to Cloudinary
-            if self.cloudinary_cloud and self.cloudinary_key:
+            # Upload to Cloudinary if configured and NOT a placeholder
+            is_cloudinary_configured = (
+                self.cloudinary_cloud and 
+                self.cloudinary_cloud != "your-cloud-name" and
+                self.cloudinary_key and 
+                self.cloudinary_key != "your-cloudinary-key"
+            )
+
+            if is_cloudinary_configured:
+                logger.info(f"Uploading to Cloudinary: {self.cloudinary_cloud}")
                 cdn_url = await self._upload_to_cloudinary(job.video_url, job.job_id)
             else:
-                # No Cloudinary configured, use local path
-                cdn_url = job.video_url
-                logger.warning("Cloudinary not configured, using local file path")
+                # Use browser-friendly local path (e.g., /outputs/filename.mp4)
+                video_filename = Path(job.video_url).name
+                cdn_url = f"/outputs/{video_filename}"
+                logger.warning(f"Cloudinary not configured, serving locally: {cdn_url}")
             
             # Mark job as complete
             job_manager.set_complete(

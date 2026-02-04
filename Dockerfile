@@ -5,10 +5,12 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install FFmpeg (required for video processing)
+# Install FFmpeg and fonts (required for video processing and captions)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     fonts-dejavu-core \
+    fonts-liberation \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for layer caching)

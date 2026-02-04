@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Videeo.ai | Cinematic Intelligence</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Palette: Editorial Dark Mode */
+            --bg-body: #050505;
+            --bg-card: #0F0F0F;
+            --bg-input: #141414;
+            
+            --text-primary: #F0F0F0;
+            --text-secondary: #888888;
+            --text-accent: #D4D4D4;
+            
+            --accent: #E2FF00; /* Acid Lime for high fashion/tech feel */
+            --accent-dim: #b8cc00;
+            
+            --border: 1px solid rgba(255, 255, 255, 0.08);
+            --border-hover: 1px solid rgba(255, 255, 255, 0.2);
+            
+            --radius-lg: 24px;
+            --radius-sm: 8px;
+            
+            --shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+            --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient Grain Texture */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: var(--grain);
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.4;
+        }
+
+        header {
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: var(--border);
+            background: rgba(5,5,5,0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+            color: white;
+            text-transform: lowercase;
+        }
+        
+        .brand span {
+            color: var(--accent);
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: white;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4rem 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .hero-text {
+            text-align: center;
+            max-width: 800px;
+            margin-bottom: 4rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            line-height: 1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to bottom, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* --- Editor Application --- */
+        .editor-container {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            max-width: 600px;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .editor-container.has-result {
+            max-width: 1200px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel:hover {
+            border: var(--border-hover);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        textarea {
+            background: var(--bg-input);
+            border: var(--border);
+            border-radius: 12px;
+            color: white;
+            padding: 1.25rem;
+            font-family: 'Manrope', sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            min-height: 160px;
+            resize: vertical;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            background: #1a1a1a;
+        }
+
+        textarea::placeholder {
+            color: #444;
+        }
+
+        .controls-row {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 1rem;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            appearance: none;
+            background: var(--bg-input);
+            border: var(--border);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            font-family: 'Manrope', sans-serif;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        /* Custom Dropdown Arrow */
+        .select-wrapper::after {
+            content: "↓";
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            font-size: 0.8rem;
+        }
+
+        button.primary-btn {
+            background: var(--accent);
+            color: black;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        button.primary-btn:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(226, 255, 0, 0.3);
+        }
+
+        button.primary-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* --- Visualization Panel (Right Side) --- */
+        .preview-panel {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .preview-panel.active {
+            display: flex;
+            border: var(--border);
+            animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .phone-frame {
+            width: 100%;
+            max-width: 320px; /* ~9:16 ratio relative to height */
+            aspect-ratio: 9/16;
+            background: black;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 40px 80px -20px black;
+            position: relative;
+            border: 4px solid #1a1a1a;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- Progress UI --- */
+        .progress-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .loader-track {
+            width: 60%;
+            height: 2px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 1rem;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loader-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .status-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .percentage {
+            font-family: 'Manrope', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-top: 0.5rem;
+        }
+
+        .download-btn {
+            margin-top: 1.5rem;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 2px;
+            transition: all 0.2s;
+        }
+        
+        .download-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .error-toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #2a0000;
+            color: #ff6b6b;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #5a0000;
+            font-size: 0.9rem;
+            display: none;
+            animation: slideUp 0.3s ease-out;
+            z-index: 999;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(100%); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 800px) {
+            .editor-container.has-result {
+                grid-template-columns: 1fr;
+            }
+            h1 { font-size: 2.5rem; }
+            .controls-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">videeo<span>.ai</span></div>
+        <a href="#" class="nav-link">BETA v1.0</a>
+    </header>
+
+    <main>
+        <div class="hero-text">
+            <h1>Cinematic Intelligence.</h1>
+            <p class="subtitle">Turn raw ideas into studio-grade vertical video. <br>Generated scene-by-scene, rendered in real-time.</p>
+        </div>
+
+        <div class="editor-container" id="editor-container">
+            
+            <!-- LEFT PANEL: INPUT -->
+            <div class="panel input-panel">
+                <div class="input-group">
+                    <label>Creative Brief</label>
+                    <textarea id="prompt" placeholder="Describe your vision...&#10;Ex: Cyberpunk detective walking through rainy neon streets. Scene 1: Close up on metallic eye..."></textarea>
+                </div>
+
+                <div class="controls-row">
+                    <div class="input-group">
+                        <label>Length</label>
+                        <div class="select-wrapper">
+                            <select id="scenes">
+                                <option value="2">2 Scenes</option>
+                                <option value="3" selected>3 Scenes</option>
+                                <option value="4">4 Scenes</option>
+                                <option value="5">5 Scenes</option>
+                                <option value="6">6 Scenes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>&nbsp;</label> <!-- Spacer -->
+                        <button class="primary-btn" id="generate-btn">
+                            Initialize Render
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: PREVIEW -->
+            <div class="panel preview-panel" id="preview-panel">
+                
+                <!-- Loading State -->
+                <div class="progress-overlay" id="loading-overlay" style="display: none;">
+                    <div class="status-text" id="status-text">Initializing...</div>
+                    <div class="loader-track">
+                        <div class="loader-fill" id="loader-fill"></div>
+                    </div>
+                    <div class="percentage" id="percent-text">0%</div>
+                </div>
+
+                <!-- Video Frame -->
+                <div class="phone-frame">
+                    <video id="video-player" controls playsinline></video>
+                </div>
+
+                <a href="#" class="download-btn" id="download-btn" download style="display: none;">
+                    Download Asset (.mp4)
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="error-toast" id="error-toast"></div>
+
+    <script>
+        // API Configuration
+        const API_BASE = window.location.origin;
+        
+        // DOM Elements
+        const editorContainer = document.getElementById('editor-container');
+        const previewPanel = document.getElementById('preview-panel');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const generateBtn = document.getElementById('generate-btn');
+        const promptInput = document.getElementById('prompt');
+        const scenesSelect = document.getElementById('scenes');
+        const statusText = document.getElementById('status-text');
+        const loaderFill = document.getElementById('loader-fill');
+        const percentText = document.getElementById('percent-text');
+        const videoPlayer = document.getElementById('video-player');
+        const downloadBtn = document.getElementById('download-btn');
+        const errorToast = document.getElementById('error-toast');
+
+        let currentJobId = null;
+        let pollInterval = null;
+
+        // --- Event Listeners ---
+        
+        generateBtn.addEventListener('click', startGeneration);
+
+        // --- Core Functions ---
+
+        async function startGeneration() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                showError("Please enter a creative brief.");
+                return;
+            }
+
+            // 1. UI Transition
+            editorContainer.classList.add('has-result');
+            previewPanel.classList.add('active');
+            loadingOverlay.style.display = 'flex';
+            downloadBtn.style.display = 'none';
+            generateBtn.disabled = true;
+            generateBtn.textContent = "Processing...";
+            
+            // Reset Progress
+            updateProgress(0, "Connecting to neural engine...");
+
+            try {
+                // 2. API Call
+                const response = await fetch(`${API_BASE}/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        scenes: parseInt(scenesSelect.value),
+                        aspect_ratio: '9:16'
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Initialization failed');
+                }
+
+                const data = await response.json();
+                currentJobId = data.job_id;
+
+                // 3. Start Polling
+                pollInterval = setInterval(pollStatus, 3000);
+                pollStatus(); // Immediate check
+
+            } catch (err) {
+                console.error(err);
+                showError(err.message);
+                resetUI();
+            }
+        }
+
+        async function pollStatus() {
+            if (!currentJobId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/status/${currentJobId}`);
+                if (!response.ok) throw new Error("Status check failed");
+                
+                const data = await response.json();
+                
+                updateProgress(data.progress_percent, data.current_step);
+
+                if (data.status === 'complete') {
+                    finishGeneration();
+                } else if (data.status === 'error') {
+                    throw new Error(data.error_message || "Generation pipeline failed");
+                }
+
+            } catch (err) {
+                clearInterval(pollInterval);
+                showError(err.message);
+                resetUI();
+            }
+        }
+
+        async function finishGeneration() {
+            clearInterval(pollInterval);
+            updateProgress(100, "Finalizing...");
+            
+            try {
+                const response = await fetch(`${API_BASE}/download/${currentJobId}`);
+                const data = await response.json();
+                
+                if (data.video_url) {
+                    // Normalize URL if needed
+                    const videoUrl = data.video_url.startsWith('http') || data.video_url.startsWith('/') 
+                        ? data.video_url 
+                        : `${API_BASE}${data.video_url}`;
+
+                    // Set Video
+                    videoPlayer.src = videoUrl;
+                    videoPlayer.load(); // Force reload
+                    
+                    // Reveal Result
+                    setTimeout(() => {
+                        loadingOverlay.style.display = 'none';
+                        downloadBtn.href = videoUrl;
+                        downloadBtn.style.display = 'inline-block';
+                        resetUI(true); // Enable button but keep layout
+                    }, 500);
+                }
+            } catch (err) {
+                showError("Failed to retrieve final asset.");
+            }
+        }
+
+        // --- Helper Functions ---
+
+        function updateProgress(percent, text) {
+            loaderFill.style.width = `${percent}%`;
+            percentText.textContent = `${percent}%`;
+            statusText.textContent = text;
+        }
+
+        function showError(msg) {
+            errorToast.textContent = msg;
+            errorToast.style.display = 'block';
+            setTimeout(() => {
+                errorToast.style.display = 'none';
+            }, 5000);
+        }
+
+        function resetUI(keepResult = false) {
+            generateBtn.disabled = false;
+            generateBtn.textContent = keepResult ? "Generate New Version" : "Initialize Render";
+            if (!keepResult) {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+    </script>
+</body>
+</html>

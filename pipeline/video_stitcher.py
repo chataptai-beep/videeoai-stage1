@@ -265,9 +265,10 @@ class VideoStitcher:
         concat_file = self.temp_dir / "concat_list.txt"
         with open(concat_file, "w") as f:
             for v in std_videos:
-                # Paths must use forward slashes and be escaped
-                safe_path = str(v).replace("\\", "/")
-                f.write(f"file '{safe_path}'\n")
+                # CRITICAL: Use absolute paths! FFmpeg resolves relative paths
+                # from the concat file location, not the working directory.
+                abs_path = os.path.abspath(v).replace("\\", "/")
+                f.write(f"file '{abs_path}'\n")
 
         cmd = [
             self.ffmpeg_path, "-y",

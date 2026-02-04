@@ -250,56 +250,43 @@ class VideoStitcher:
             else:
                  durations.append(4.0) # Fallback
             
-        # Stitch
+        # Stitch using CONCAT DEMUXER (low-memory, no crossfade)
+        # The xfade filter requires holding multiple frames in RAM, which OOMs on Railway.
+        # Concat demuxer processes sequentially with minimal memory.
         output_path = self.output_dir / f"{output_filename}.mp4"
         n = len(std_videos)
         
         if n == 1:
             if os.path.exists(output_path): os.remove(output_path)
             os.rename(std_videos[0], output_path)
-            return str(output_path)
+            return str(output_path), durations
 
-        inputs = []
-        for v in std_videos:
-            inputs.extend(["-i", v])
-
-        # REMOVED Silent Audio Input
-
-        # Dynamic Offsets
-        filter_complex = ""
-        prev_v = "[0:v]"
-        prev_a = "[0:a]" # Audio is BACK
-        cumulative_offset = 0.0
-        
-        for i in range(1, n):
-            cumulative_offset += durations[i-1] - crossfade_duration
-            out_v = f"v_fade_{i}"
-            out_a = f"a_fade_{i}"
-            filter_complex += f"{prev_v}[{i}:v]xfade=transition=fade:duration={crossfade_duration}:offset={cumulative_offset}[{out_v}]; "
-            filter_complex += f"{prev_a}[{i}:a]acrossfade=d={crossfade_duration}[{out_a}]; "
-            prev_v = f"[{out_v}]"
-            prev_a = f"[{out_a}]"
+        # Create concat list file
+        concat_file = self.temp_dir / "concat_list.txt"
+        with open(concat_file, "w") as f:
+            for v in std_videos:
+                # Paths must use forward slashes and be escaped
+                safe_path = str(v).replace("\\", "/")
+                f.write(f"file '{safe_path}'\n")
 
         cmd = [
-            self.ffmpeg_path, "-y", *inputs,
-            "-filter_complex", filter_complex.strip().rstrip(';'),
-             "-map", prev_v, 
-            "-map", prev_a, # Map actual audio
-            "-s", f"{target_w}x{target_h}", # FORCE VERTICAL
-            "-aspect", "9:16",
-            "-threads", "1", # CRITICAL for Railway RAM
+            self.ffmpeg_path, "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", str(concat_file),
+            "-threads", "1",  # CRITICAL for Railway RAM
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23", "-pix_fmt", "yuv420p",
-            "-shortest", 
-            "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+            "-c:a", "aac", "-b:a", "128k",
+            "-movflags", "+faststart",
             str(output_path)
         ]
         
-        logger.info(f"Running synchronous stitching (Vertical + Fast) for {n} clips...")
+        logger.info(f"Running low-memory concat stitch for {n} clips...")
         subprocess.run(cmd, check=True)
         
-        # Cleanup
-        # for f in local_videos + std_videos:
-        #     if os.path.exists(f): os.remove(f)
+        # Cleanup concat file
+        if os.path.exists(concat_file):
+            os.remove(concat_file)
             
         return str(output_path), durations
     

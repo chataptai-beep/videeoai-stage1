@@ -120,11 +120,8 @@ class VideoGenerator:
             "Texture: Film grain, realistic, detailed."
         )
         
-        # Audio instructions
-        prompt_parts.append(
-            "AUDIO: Cinematic sound effects matching the action, "
-            "realistic ambient noise, high fidelity."
-        )
+        # Audio instructions (Disabled to prevent Veo 400 errors)
+        # prompt_parts.append(...) removed
         
         # Critical: No text overlays (we add captions ourselves)
         prompt_parts.append(
@@ -166,6 +163,7 @@ class VideoGenerator:
                         "aspectRatio": ar_map.get(aspect_ratio, "16:9"),
                         "imageUrls": reference_image_url,
                         "generationType": "FIRST_AND_LAST_FRAMES_2_VIDEO",
+                        "enableAudio": False, # Disable audio to prevent Google Veo OOM/Failure
                         "seeds": "12345",
                         "negative_prompt": "text, subtitles, watermark, logo, signature, typography, blurred, distorted"
                     }
@@ -343,8 +341,12 @@ class VideoGenerator:
                 await asyncio.sleep(self.poll_interval)
             
             except Exception as e:
-                logger.error(f"Unexpected error polling task {task_id}: {e}")
-                # For safety, maybe verify if it is a fatal code error or transient
+                # If the error contains "generation failed", it's a fatal task error from is_failed state
+                if "generation failed" in str(e).lower():
+                    logger.error(f"Fatal error in video task {task_id}: {e}")
+                    raise e
+                
+                logger.error(f"Unexpected transient error polling task {task_id}: {e}")
                 await asyncio.sleep(self.poll_interval)
         
         raise Exception(f"Video generation timed out after {max_attempts * self.poll_interval} seconds")

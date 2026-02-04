@@ -9,11 +9,11 @@ import os
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-try:
-    import imageio_ffmpeg
-    FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
-except ImportError:
-    FFMPEG_EXE = "ffmpeg"  # Fallback to system PATH
+# CRITICAL: Use system FFmpeg, NOT imageio_ffmpeg bundled binary.
+# The bundled binary lacks --enable-libfreetype, so 'drawtext' filter is missing.
+# System FFmpeg (installed via apt-get in Dockerfile) has full filter support.
+import shutil
+FFMPEG_EXE = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
 
 from config import settings
 from models.schemas import Scene

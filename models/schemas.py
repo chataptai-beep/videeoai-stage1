@@ -90,8 +90,8 @@ class Scene(BaseModel):
     )
     dialogue: str = Field(
         ...,
-        max_length=100,
-        description="Text overlay/dialogue for this scene (15-20 words max)"
+        max_length=500,
+        description="Text overlay/dialogue for this scene"
     )
     # Generated during pipeline
     image_url: Optional[str] = None

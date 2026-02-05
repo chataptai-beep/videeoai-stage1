@@ -94,7 +94,7 @@ app = FastAPI(
 )
 
 # === Rate Limiting (Bonus Point) ===
-# Max 5 requests per IP per hour
+# Max 50 requests per IP per hour
 ip_request_history = {} # {ip: [timestamp1, timestamp2, ...]}
 
 @app.middleware("http")
@@ -107,10 +107,10 @@ async def rate_limit_middleware(request, call_next):
         one_hour_ago = now - 3600
         history = [ts for ts in ip_request_history.get(client_ip, []) if ts > one_hour_ago]
         
-        if len(history) >= 5:
+        if len(history) >= 50:
             return JSONResponse(
                 status_code=429,
-                content={"detail": "Rate limit exceeded. Max 5 requests per hour."}
+                content={"detail": "Rate limit exceeded. Max 50 requests per hour."}
             )
         
         # Update history

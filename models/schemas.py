@@ -37,13 +37,13 @@ class GenerateRequest(BaseModel):
     prompt: str = Field(
         ...,
         min_length=10,
-        max_length=10000,
+        max_length=20000,
         description="Text prompt describing the video to generate"
     )
     scenes: int = Field(
         default=5,
         ge=1,
-        le=10,
+        le=20,
         description="Number of scenes to generate (default: 5)"
     )
     aspect_ratio: AspectRatio = Field(
@@ -83,14 +83,14 @@ class DownloadResponse(BaseModel):
 
 class Scene(BaseModel):
     """Single scene in the video script."""
-    scene_number: int = Field(ge=1, le=10)
+    scene_number: int = Field(ge=1, le=20)
     visual_description: str = Field(
         ...,
         description="What to show visually in this scene"
     )
     dialogue: str = Field(
         ...,
-        max_length=500,
+        max_length=2000,
         description="Text overlay/dialogue for this scene"
     )
     # Generated during pipeline

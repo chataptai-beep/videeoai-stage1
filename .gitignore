@@ -30,6 +30,7 @@ env/
 .env
 .env.local
 .env.*.local
+temp_auto_push.bat
 
 # IDE
 .idea/
@@ -63,3 +64,6 @@ htmlcov/
 # Misc
 *.bak
 *.tmp
+.gitignore
+temp_interactive_push.bat
+branch_structure.json

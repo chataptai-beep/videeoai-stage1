@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     
     # Optional: Google Gemini as alternative to OpenAI
     google_api_key: Optional[str] = None
+    gemini_model: str = "gemini-2.5-flash"
+    
+    # Server Settings
+    host: str = "0.0.0.0"
+    port: int = 8000
     
     # Application Settings
     app_name: str = "Videeo.ai Stage 1 Pipeline"
